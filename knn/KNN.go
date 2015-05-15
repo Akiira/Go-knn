@@ -9,6 +9,7 @@ package knn
 
 import (
 	"fmt"
+	"sync"
 )
 
 //import (
@@ -86,19 +87,26 @@ func RunKNN(k int, dataSet DataSet, folds int, disFun DistanceFunction, numOfCla
 	fmt.Println("Size of data set: ", data.Size())
 
 	correct := 0
-	total := 1000
-
-	for i := 1; i <= total; i++ {
-		nghbrs := GetNeighbors(i) //TODO remove fixed index
-
-		class := Vote(nghbrs)
+	total := 10000
+	var wg sync.WaitGroup
+	wg.Add(total)
+	for i := 0; i <= total; i++ {
+		//nghbrs := GetNeighbors(i) //TODO remove fixed index
+		//fmt.Println("Neighbors: ", nghbrs)
+		//class := Vote(nghbrs)
 		//fmt.Println("Predicted: ", class, " for ", data.GetClass(i))
-		if class == data.GetClass(i) {
-			correct++
-		}
-	}
 
-	fmt.Println("Accuracy: ", float64(correct)/float64(total))
+		go func(i2 int) {
+			class := Vote(GetNeighbors(i2))
+			if class == data.GetClass(i2) {
+				correct++
+			}
+			wg.Done()
+		}(i)
+
+	}
+	wg.Wait()
+	fmt.Println("Accuracy: ", float64(correct)/float64(total), ", Correct: ", correct, ", Total: ", total)
 }
 
 func Vote(neighbors Neighbors) (cuisine int) {
@@ -106,18 +114,22 @@ func Vote(neighbors Neighbors) (cuisine int) {
 
 	for _, neighbor := range neighbors.neighbors {
 		dist := neighbor.distance
-		weight := data.Weight(neighbor.index)
+		//weight := data.Weight(neighbor.index)
+		weight := 1.0
+		//_ = weight * (1.0 / (dist * dist))
 		votes[data.GetClass(neighbor.index)] += weight * (1.0 / (dist * dist))
+		//votes[data.GetClass(neighbor.index)] += 1
 	}
 
-	var highest float64
+	var highest float64 = 0
 
 	for index, vote := range votes {
 		if vote > highest {
 			cuisine = index
+			highest = vote
 		}
 	}
-
+	//fmt.Print("\tVotes: ", votes)
 	return cuisine
 }
 

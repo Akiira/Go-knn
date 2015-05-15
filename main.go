@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"knn/knn"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -15,7 +16,7 @@ var testFile string = "training-data.txt"
 var dataSet *Data = newDataSet()
 
 func main() {
-	fmt.Println("Hello World!")
+	runtime.GOMAXPROCS(4)
 
 	file, err := os.Open(testFile)
 	checkError(err)
@@ -28,13 +29,13 @@ func main() {
 		cuis, err := strconv.Atoi(data[0])
 		checkError(err)
 
-		if len(data) > 2 {
+		if len(data) > 4 {
 			dataSet.addRecipe(NewRecipe(cuis, data[1:]))
 		}
 	}
 	dataSet.calculateMetaData()
 
-	knn.RunKNN(6, dataSet, 2, JacardDistance, 7)
+	knn.RunKNN(8, dataSet, 2, WeightedJacardDistance, 7)
 }
 
 func checkError(err error) {
@@ -42,6 +43,31 @@ func checkError(err error) {
 		fmt.Fprintf(os.Stderr, "Fatal error: %s", err.Error())
 		os.Exit(1)
 	}
+}
+
+func WeightedJacardDistance(v1 interface{}, v2 interface{}) float64 {
+
+	recp1 := v1.(*Recipe)
+	recp2 := v2.(*Recipe)
+
+	intersection := 0.0
+	union := 0.0
+
+	for name, _ := range recp1.getUniqueIngredients() {
+		if recp2.hasIngredient(name) {
+			intersection += (1.0 * dataSet.getMaxDiffProb(name))
+		}
+		union += (1.0 * dataSet.getMaxDiffProb(name))
+		//fmt.Println("\tDiff: ", dataSet.getMaxDiffProb(name))
+	}
+
+	for name, _ := range recp2.getUniqueIngredients() {
+		if !recp1.hasIngredient(name) {
+			union += (1.0 * dataSet.getMaxDiffProb(name))
+		}
+	}
+
+	return 1.0 - (float64(intersection) / float64(union))
 }
 
 func JacardDistance(v1 interface{}, v2 interface{}) float64 {
