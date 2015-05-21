@@ -7,16 +7,24 @@ type Recipe struct {
 	UniqueID    int
 }
 
-var count int = 0
+func NewRecipe2(cuisine int) (recp *Recipe) {
+	recp = new(Recipe)
+	recp.Cuisine = cuisine
+	recp.Ingredients = make([]string, 0)
+
+	return recp
+}
 
 func NewRecipe(cuisine int, ingredients []string) (recp *Recipe) {
 	recp = new(Recipe)
 	recp.Cuisine = cuisine
 	recp.Ingredients = ingredients
-	recp.UniqueID = count
-	count++
 
 	return recp
+}
+
+func (recp *Recipe) AddIngredient(ingr string) {
+	recp.Ingredients = append(recp.Ingredients, ingr)
 }
 
 func (recp *Recipe) hasIngredient(testIngredient string) bool {
@@ -33,7 +41,6 @@ func (recp *Recipe) getIngredientCount(ingredientName string) (count int, found 
 	for _, ingr := range recp.Ingredients {
 		if ingr == ingredientName {
 			found = true
-			count++
 		}
 	}
 

@@ -87,9 +87,9 @@ func RunKNN(k int, dataSet DataSet, folds int, disFun DistanceFunction, numOfCla
 	fmt.Println("Size of data set: ", data.Size())
 
 	correct := 0
-	total := 10000
+	total := 15000
 	var wg sync.WaitGroup
-	wg.Add(total)
+	wg.Add(3)
 	for i := 0; i <= total; i++ {
 		//nghbrs := GetNeighbors(i) //TODO remove fixed index
 		//fmt.Println("Neighbors: ", nghbrs)
@@ -104,8 +104,12 @@ func RunKNN(k int, dataSet DataSet, folds int, disFun DistanceFunction, numOfCla
 			wg.Done()
 		}(i)
 
+		if i%3 == 2 {
+			wg.Wait()
+			wg.Add(3)
+		}
 	}
-	wg.Wait()
+
 	fmt.Println("Accuracy: ", float64(correct)/float64(total), ", Correct: ", correct, ", Total: ", total)
 }
 

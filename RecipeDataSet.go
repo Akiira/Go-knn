@@ -11,9 +11,28 @@ import (
 )
 
 type Data struct {
-	recipes         []*Recipe
-	ingredientInfo  map[string]*ingredientEntry
+	recipes []*Recipe
+
+	//Some meta-data for ingredients
+	ingredientInfo map[string]*ingredientEntry
+
+	//The number of unique ingredients
 	ingredientCount int
+}
+
+type ingredientEntry struct {
+
+	//The name of the ingredient
+	ingredient string
+
+	//The number of times this ingredient appears accross all recipes and cuisines
+	count int
+
+	//The number of times this ingredient appears in each cuisine
+	cuisineCounts []int
+
+	//TODO
+	entropy float64
 }
 
 func newDataSet() *Data {
@@ -55,46 +74,6 @@ func (ds *Data) getEntropyWeight(recpipeID int) float64 {
 	return 1.5 - entropy
 }
 
-//func (ds *Data) getMaxPr(recipeID int) float64 {
-//	min := 99999.0
-//	max := -999999.0
-//	for _, ingrName := range recp.getIngredients() {
-//		ingr := ds.ingredientInfo[ingrName]
-//		for _, count := range ingr.cuisineCounts {
-
-//		}
-
-//	}
-
-//    for (int i = 1; i <= 8; i++) {
-//        double current = getProbabilityForCuisine(i + 1);
-//        min = min < current ? min : current;
-//        max = max > current ? max : current;
-//    }
-
-//    return max - min;
-//}
-
-//func (ds *Data) getMaxCountDifference(recipeID int) float64 {
-//	recp := ds.recipes[recipeID]
-//	min := 100000
-//	max := 0
-
-//	for _, ingrName := range recp.getIngredients() {
-//		ingr := ds.ingredientInfo[ingrName]
-
-//		for _, count := range ingr.cuisineCounts {
-//			if count > 0 && count < min {
-//				min = count
-//			} else if count > max {
-//				max = count
-//			}
-//		}
-//	}
-
-//	return 0.5 + (float64(max-min) / float64(max))
-//}
-
 func (ds *Data) getMaxDiffProb(ingrName string) float64 {
 	ie := ds.ingredientInfo[ingrName]
 	min := 99999.0
@@ -134,13 +113,6 @@ func (ds *Data) GetClass(index int) int {
 	return ds.recipes[index].Cuisine
 }
 
-type ingredientEntry struct {
-	ingredient    string
-	count         int
-	cuisineCounts []int
-	entropy       float64
-}
-
 func newIngredientEntry(name string) *ingredientEntry {
 	ie := ingredientEntry{ingredient: name}
 	ie.cuisineCounts = make([]int, 8) //TODO remove hard coding
@@ -168,3 +140,43 @@ func (ie *ingredientEntry) calculateEntropy() float64 {
 
 	return ie.entropy
 }
+
+//func (ds *Data) getMaxPr(recipeID int) float64 {
+//	min := 99999.0
+//	max := -999999.0
+//	for _, ingrName := range recp.getIngredients() {
+//		ingr := ds.ingredientInfo[ingrName]
+//		for _, count := range ingr.cuisineCounts {
+
+//		}
+
+//	}
+
+//    for (int i = 1; i <= 8; i++) {
+//        double current = getProbabilityForCuisine(i + 1);
+//        min = min < current ? min : current;
+//        max = max > current ? max : current;
+//    }
+
+//    return max - min;
+//}
+
+//func (ds *Data) getMaxCountDifference(recipeID int) float64 {
+//	recp := ds.recipes[recipeID]
+//	min := 100000
+//	max := 0
+
+//	for _, ingrName := range recp.getIngredients() {
+//		ingr := ds.ingredientInfo[ingrName]
+
+//		for _, count := range ingr.cuisineCounts {
+//			if count > 0 && count < min {
+//				min = count
+//			} else if count > max {
+//				max = count
+//			}
+//		}
+//	}
+
+//	return 0.5 + (float64(max-min) / float64(max))
+//}

@@ -14,6 +14,7 @@ import (
 //var testFile string = "testing-data-small.txt"
 var testFile string = "training-data.txt"
 var dataSet *Data = newDataSet()
+var cleanDataSet *Data = newDataSet()
 
 func main() {
 	runtime.GOMAXPROCS(4)
@@ -29,13 +30,75 @@ func main() {
 		cuis, err := strconv.Atoi(data[0])
 		checkError(err)
 
-		if len(data) > 4 {
-			dataSet.addRecipe(NewRecipe(cuis, data[1:]))
-		}
+		dataSet.addRecipe(NewRecipe(cuis, data[1:]))
 	}
 	dataSet.calculateMetaData()
 
-	knn.RunKNN(8, dataSet, 2, WeightedJacardDistance, 7)
+	cleanData()
+}
+
+func RunKNN() {
+	knn.RunKNN(8, cleanDataSet, 2, WeightedJacardDistance, 7)
+}
+
+func cleanData() {
+	tooFewIngr := 0
+	badIngr := 0
+	badIngredients := make(map[string]bool)
+
+	ingrInfo := dataSet.ingredientInfo
+
+	for ingr, info := range ingrInfo {
+		if info.count < 2 {
+			badIngredients[ingr] = true
+		}
+	}
+
+	file, err := os.Open(testFile)
+	checkError(err)
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+
+		data := strings.Split(scanner.Text(), " ")
+		ingredients := data[1:]
+		cuis, err := strconv.Atoi(data[0])
+		checkError(err)
+
+		recp := NewRecipe2(cuis)
+
+		for _, ingr := range ingredients {
+			if found, _ := badIngredients[ingr]; !found {
+				recp.AddIngredient(ingr)
+			} else {
+				badIngr++
+			}
+		}
+		if len(recp.Ingredients) > 2 {
+			cleanDataSet.addRecipe(recp)
+		} else {
+			tooFewIngr++
+		}
+
+	}
+
+	fmt.Println("Size of original dataset: ", len(dataSet.recipes))
+	fmt.Println("Size of cleaned dataset : ", len(cleanDataSet.recipes))
+	fmt.Println("Number of recipes below cutoff: ", tooFewIngr)
+	fmt.Println("Number of unique ingredients removed: ", len(badIngredients))
+	fmt.Println("Number of ingredients removed: ", badIngr)
+	i := 0
+	for key, _ := range badIngredients {
+		fmt.Print("\t", key)
+		i++
+		if i%7 == 6 {
+			fmt.Print("\n")
+		}
+	}
+
+	cleanDataSet.calculateMetaData()
+	RunKNN()
 }
 
 func checkError(err error) {
